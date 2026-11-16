@@ -27,6 +27,31 @@
         "Waterfall of Bloodshed (Alternate)"
       ],
       "track_names_source": "https://downloads.khinsider.com/game-soundtracks/album/operation-c-gb"
+    },
+    {
+      "title": "Jurassic Park Part 2: The Chaos Continues",
+      "rom_sha256": [
+        "d1f49235704e86070bcd04569be7d2d58643cc4021b1f7bc9eb5133e27457329"
+      ],
+      "gbs_file": "jurassic-park-2.gbs",
+      "gbs_sha256": "987208be5e4eb4d1758e34cffcc6fd8f728a25208b71c560710e7c6060f9ae18",
+      "archive_url": "https://snesmusic.org/hoot/gbs/Jurassic%20Park%202%20%281994%29%28Ocean%29.zip",
+      "archive_member": "Jurassic Park 2 (1994)(Ocean).gbs",
+      "tracks": [
+        "Title Screen, Zone 4, Staff Roll",
+        "Start",
+        "Level Intro, Continue, Game Over",
+        "Zone 1, Zone 3-2",
+        "Zone 2",
+        "T-Rex Pursuit",
+        "Zone 3-1",
+        "Boss Zone",
+        "Stage Clear",
+        "All Items Collected, Ending Sequence",
+        "Lose Life",
+        "Unknown Jingle"
+      ],
+      "track_names_source": "https://downloads.khinsider.com/game-soundtracks/album/jurassic-park-2-the-chaos-continues-gb"
     }
   ]
 }
