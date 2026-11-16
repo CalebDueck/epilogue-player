@@ -1956,21 +1956,35 @@
       ],
       "format": "WAV",
       "verification": "verified",
-      "verification_note": "Rendered from this exact local ROM through mGBA. This is a continuous in-game capture, not six individually extracted songs.",
-      "unsupported_reason": "THUG2's current GSF rip is silent: Gaxtapper cannot load a required Vicarious Visions division routine into IWRAM. Audio playback is disabled until a corrected rip is available.",
+      "verification_note": "Six separate game music tracks rendered from the exact local ROM through mGBA, with gameplay sound effects muted.",
       "tracks": [
-        "In-game audio capture (156 sec)"
+        "Cut Chemist",
+        "Metallica",
+        "Puba",
+        "Ramones",
+        "The Doors",
+        "Zeke"
       ],
       "track_files": [
-        "wav/thug2/in_game_capture.wav"
+        "wav/thug2/cutchemist.wav",
+        "wav/thug2/metallica.wav",
+        "wav/thug2/puba.wav",
+        "wav/thug2/ramones.wav",
+        "wav/thug2/the_doors.wav",
+        "wav/thug2/zeke.wav"
       ],
-      "source": "Exact local ROM via mGBA",
+      "source": "Exact local ROM via mGBA; in-game GAX music engine",
       "source_url": "https://mgba.io/",
-      "track_labels_note": "Capture contains the game soundtrack and any gameplay effects in the recorded segment.",
-      "source_track_count": 1,
-      "notes": "156.6 seconds rendered from the exact local ROM at 32,768 Hz stereo after proceeding into gameplay and leaving the skater idle. The capture starts 84.5 seconds into the deterministic emulator session to omit most menu and dialogue audio.",
+      "track_labels_note": "Labels match the six GAX song names extracted from the ROM.",
+      "source_track_count": 6,
+      "notes": "Six distinct 49.24-second stereo tracks at 32,768 Hz, split at the game’s active song-pointer transitions. Five are played by the normal in-game playlist. The sixth (Zeke) is present in the ROM but omitted from the normal playlist; it was selected by changing one playlist pointer in a temporary ROM copy. The user’s ROM was not modified.",
       "track_sha256": [
-        "f1514cefbf39318d49be917fe19a4dda4404710193f88d75d6454324e39f530b"
+        "38762aa7353405c531e5b19c476dce3a1742513006be548e52acfdc603443558",
+        "d26739e63bd99944310ff1d182bb12069b4a2467dd50c110c10f5e1f10a72ba9",
+        "6147a0f26c164c5a6811b1b8954b0aa7d6198d8ba47e165a8c110fd318ede1a8",
+        "a7a15d906019aa04b7862d1ab38ef58259a249e4d95aefb923ce84d934a3336c",
+        "4ebf8bd8babb2c137603bc06a72400e3c5730111e50fc3b2bdaf2ca6a85ccdad",
+        "845fa5a8b6803cb383f0840853a2a59116f9461a267e65b33a3d1fd8ca3328f0"
       ]
     },
     {

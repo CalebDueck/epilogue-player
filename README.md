@@ -43,9 +43,10 @@ the `?api=` query parameter.
 The player matches full ROM SHA-256 values to a local track profile. The
 catalogue has profiles for all 58 unique images in the local ROM folders: 35
 GBS profiles, 13 GSF profiles, and 10 WAV profiles. Tony Hawk's Underground 2
-uses a 156-second capture rendered from its exact ROM through mGBA because its
-Gaxtapper GSF tracks render silence; the capture contains in-game music and
-gameplay audio, not six individually separated songs.
+has six separate 49-second in-game music tracks rendered from its exact ROM
+through mGBA. The Zeke track is present in the ROM but absent from the normal
+playlist; it was selected through a temporary ROM copy without changing the
+user's original image.
 The seven games without a compatible GBS or GSF rip have one hash-matched ROM
 audio capture apiece. Those short captures make each ROM playable in the music
 player, but they are not complete track catalogues for those games.
@@ -64,8 +65,8 @@ use MP2K slots rendered to WAV in the local `wav/` cache; `pw-play` plays those
 tracks. Recreate those local files and their checksum entries with
 `tools/rebuild_mp2k_wav_profiles.py` after installing
 [gba-audio-tools](https://github.com/mudassarzahid/gba-audio-tools). Extracted
-audio is not committed to this repository. The seven ROM audio captures were
-rendered from the exact local images with `tools/rom_audio_capture.c` and mGBA;
+audio is not committed to this repository. The ROM-rendered tracks were
+captured from the exact local images with `tools/rom_audio_capture.c` and mGBA;
 their exact input ROM hashes, button timings, WAV paths, and checksums are in
 the profile catalogues. To render another local ROM capture, install mGBA's
 development headers and library, then build the helper with
@@ -109,12 +110,12 @@ UI previews captured from the running app.
 
 ![GBA 16-bit synthwave preview](docs/screenshots/gba-16bit.png)
 
-All 58 indexed ROM images currently resolve to a playable profile. The seven
-ROM-rendered profiles cover Top Rank Tennis, Traumatarium Penitent, Rhythm
-Tengoku, both In The Dark revisions, Tech Deck Skateboarding, and Wicked
-Plague. Their single captured segments are startup, opening, title, or menu
-audio, depending on the game; extracting and labeling each game's complete
-soundtrack remains follow-up work.
+All 58 indexed ROM images currently resolve to a playable profile. Seven games
+use a single captured startup, opening, title, or menu segment: Top Rank Tennis,
+Traumatarium Penitent, Rhythm Tengoku, both In The Dark revisions, Tech Deck
+Skateboarding, and Wicked Plague. THUG2 has six separate music tracks.
+Extracting and labeling complete soundtracks for the other seven games remains
+follow-up work.
 
 Previously attached GB cartridges were matched to local backups by full
 SHA-256, and their playback was verified through the PulseAudio-compatible

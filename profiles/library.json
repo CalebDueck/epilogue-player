@@ -1661,11 +1661,16 @@
       "music_status": "ready",
       "backend": "WAV",
       "verification": "verified",
-      "track_count": 1,
+      "track_count": 6,
       "tracks": [
-        "In-game audio capture (156 sec)"
+        "Cut Chemist",
+        "Metallica",
+        "Puba",
+        "Ramones",
+        "The Doors",
+        "Zeke"
       ],
-      "source": "Exact local ROM via mGBA",
+      "source": "Exact local ROM via mGBA; in-game GAX music engine",
       "source_url": "https://mgba.io/"
     },
     {
