@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EPILOGUE GB PLAYER</title>
+  <style>
+    :root { color-scheme:dark; --bg:#10131a; --panel:#1b202b; --line:#343c4c; --ink:#f1f3f8; --muted:#aab2c2; --green:#a6e3a1; --yellow:#f9e2af; --red:#f38ba8; }
+    * { box-sizing:border-box }
+    body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.45 system-ui,sans-serif }
+    main { max-width:900px; margin:34px auto; padding:0 18px }
+    h1 { font-size:24px; letter-spacing:.09em; margin:0 0 5px }
+    h2 { color:var(--muted); font-size:13px; letter-spacing:.1em; margin:0 0 12px }
+    .sub,.muted { color:var(--muted) }
+    .sub { margin:0 0 20px }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px }
+    section { padding:16px; border:1px solid var(--line); border-radius:10px; background:var(--panel); margin:12px 0 }
+    .state { font-size:18px; font-weight:700 }
+    .good { color:var(--green) } .waiting { color:var(--yellow) } .bad { color:var(--red) }
+    button { border:1px solid #66718a; border-radius:7px; padding:10px 15px; color:var(--ink); background:#293142; cursor:pointer }
+    button:hover { background:#374158 } button:disabled { opacity:.4; cursor:default }
+    .controls { display:flex; gap:8px; flex-wrap:wrap }
+    #tracks { max-height:420px; overflow:auto; margin-top:12px }
+    .track { width:100%; display:flex; justify-content:space-between; text-align:left; margin:4px 0; padding:9px 12px }
+    .track.active { border-color:var(--green); color:var(--green) }
+    .note { font-size:12px; color:var(--muted) }
+    code { overflow-wrap:anywhere; color:#cba6f7 }
+    @media(max-width:600px){ main{margin:18px auto} h1{font-size:20px} }
+  </style>
+</head>
+<body>
+<main>
+  <h1>EPILOGUE GB PLAYER</h1>
+  <p class="sub">INSERT A GAME BOY CARTRIDGE. THE APP READS IT AND LOADS MATCHED MUSIC.</p>
+  <div class="grid">
+    <section><h2>GB OPERATOR</h2><div id="device" class="state waiting">CHECKING</div><p id="message" class="muted">Searching for the reader…</p><button id="scan">SCAN CARTRIDGE</button></section>
+    <section><h2>CARTRIDGE</h2><div id="cart" class="state waiting">WAITING</div><p id="title" class="muted">Insert a GB/GBC cartridge.</p><p class="note" id="mapper">—</p><p class="note">ROM SHA-256: <code id="sha">—</code></p></section>
+  </div>
+  <section>
+    <h2>MUSIC PLAYER</h2>
+    <div class="grid"><div><div id="player-status" class="state waiting">WAITING</div><p id="player-message" class="muted">Waiting for a cartridge.</p></div><div><div id="current" class="state">—</div><p id="track-number" class="muted">No track loaded</p></div></div>
+    <div class="controls"><button id="previous">◀ PREVIOUS</button><button id="play">PLAY</button><button id="next">NEXT ▶</button><button id="stop">STOP</button></div>
+    <div id="tracks"></div>
+    <p class="note">Playback runs on the laptop using the matched Game Boy sound driver and the computer's default audio output.</p>
+  </section>
+  <p class="note">Prototype profiles are matched by full ROM SHA-256. Unsupported cartridges are identified but not guessed as playable.</p>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+async function action(name) { await fetch(`/api/${name}`, {method:'POST'}); await refresh(); }
+function statusClass(value) {
+  if (["CONNECTED", "DETECTED", "DUMPED", "READY", "PLAYING"].includes(value)) return "state good";
+  if (["ERROR", "NOT FOUND", "UNAVAILABLE"].includes(value)) return "state bad";
+  return "state waiting";
+}
+async function refresh() {
+  try {
+    const response = await fetch('/api/status', {cache:'no-store'}), state = await response.json();
+    $('device').textContent = state.device; $('device').className = statusClass(state.device);
+    $('cart').textContent = state.cartridge; $('cart').className = statusClass(state.cartridge);
+    $('message').textContent = state.message;
+    const game = state.game, info = game?.operator_info || {}, analysis = game?.analysis || {};
+    $('title').textContent = game?.title || 'Insert a GB/GBC cartridge.';
+    $('mapper').textContent = [info.type, info.mbc, info.rom_size].filter(Boolean).join(' · ') || '—';
+    $('sha').textContent = analysis.sha256 || '—';
+    const p = state.player;
+    $('player-status').textContent = p.status; $('player-status').className = statusClass(p.status);
+    $('player-message').textContent = p.message;
+    $('current').textContent = p.current_track || '—';
+    $('track-number').textContent = p.track_count ? `TRACK ${p.track_index + 1} OF ${p.track_count}` : 'No track loaded';
+    $('play').textContent = p.status === 'PLAYING' ? 'PAUSE' : p.status === 'PAUSED' ? 'RESUME' : 'PLAY';
+    for (const id of ['play','stop','previous','next']) $(id).disabled = !p.supported;
+    const trackRoot = $('tracks');
+    if (trackRoot.dataset.count !== String(p.track_count)) {
+      trackRoot.replaceChildren(...p.tracks.map((name, index) => {
+        const button = document.createElement('button');
+        button.className = 'track'; button.textContent = `${String(index + 1).padStart(2,'0')}  ${name}`;
+        button.onclick = () => fetch(`/api/track/${index}`, {method:'POST'});
+        return button;
+      }));
+      trackRoot.dataset.count = String(p.track_count);
+    }
+    [...trackRoot.children].forEach((button, i) => button.classList.toggle('active', i === p.track_index));
+  } catch (err) {
+    $('device').textContent = 'LOCAL APP ERROR'; $('device').className = 'state bad'; $('message').textContent = String(err);
+  }
+}
+$('scan').onclick = () => action('scan'); $('play').onclick = () => action('play');
+$('stop').onclick = () => action('stop'); $('next').onclick = () => action('next');
+$('previous').onclick = () => action('previous');
+refresh(); setInterval(refresh, 1000);
+</script>
+</body>
+</html>

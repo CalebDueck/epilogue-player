@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "games": [
+    {
+      "title": "Operation C",
+      "rom_sha256": [
+        "0b6670e44cc2edc6fbf32fc78f499e774cf0802019480f2bf7bdb836ee15c433"
+      ],
+      "gbs_file": "operation-c.gbs",
+      "gbs_sha256": "04585eb708b8819539baffe5313258b1048682acc03c8202f3fa147ace3c2625",
+      "archive_url": "https://snesmusic.org/hoot/gbs/Operation%20C%20%281991%29%28Konami%29.zip",
+      "archive_member": "Operation C (1991)(Konami).gbs",
+      "tracks": [
+        "Stage Select",
+        "Jungle Battle (Area 1)",
+        "Maze Fortress 2 (Boss)",
+        "Triumphant Return 1 (Area Clear)",
+        "Area 2",
+        "Waterfall of Bloodshed (Area 3)",
+        "Area 3 Mid-Boss",
+        "Fortress of Ice (Area 4)",
+        "Fortress of Flame (Area 5)",
+        "Horrible Heartbeat (Final Boss)",
+        "Triumphant Return 2 (Last Area Clear)",
+        "Ending",
+        "Game Over",
+        "Waterfall of Bloodshed (Alternate)"
+      ],
+      "track_names_source": "https://downloads.khinsider.com/game-soundtracks/album/operation-c-gb"
+    }
+  ]
+}
