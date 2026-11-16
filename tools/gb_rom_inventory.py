@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any
 
 
-ROM_EXTENSIONS = {".gb", ".gbc"}
+ROM_EXTENSIONS = {".gb", ".gbc", ".gba"}
 CARTRIDGE_TYPES = {
     0x00: "ROM ONLY", 0x01: "MBC1", 0x02: "MBC1+RAM", 0x03: "MBC1+RAM+BATTERY",
     0x05: "MBC2", 0x06: "MBC2+BATTERY", 0x08: "ROM+RAM", 0x09: "ROM+RAM+BATTERY",
@@ -48,8 +48,33 @@ def header_checksum(rom: bytes) -> int:
     return value
 
 
+def inspect_gba_bytes(path: Path, rom: bytes) -> dict[str, Any]:
+    if len(rom) < 0xC0:
+        raise ValueError("file is shorter than the 0xC0-byte GBA cartridge header")
+    if rom[0xB2] != 0x96:
+        raise ValueError("GBA header fixed byte at 0xB2 is not 0x96")
+    title = rom[0xA0:0xAC].split(b"\0", 1)[0].decode("ascii", errors="replace").strip()
+    game_code = rom[0xAC:0xB0].decode("ascii", errors="replace")
+    maker_code = rom[0xB0:0xB2].decode("ascii", errors="replace")
+    expected = rom[0xBD]
+    actual = (-0x19 - sum(rom[0xA0:0xBD])) & 0xFF
+    return {
+        "file": str(path), "title": title, "sha1": hashlib.sha1(rom).hexdigest(),
+        "sha256": hashlib.sha256(rom).hexdigest(), "file_size_bytes": len(rom),
+        "console_family": "GBA", "presentation_mode": "gba16",
+        "game_code": game_code, "maker_code": maker_code,
+        "region_code": game_code[3] if len(game_code) == 4 else "",
+        "gba_fixed_byte": "0x96", "header_checksum_expected": f"0x{expected:02X}",
+        "header_checksum_actual": f"0x{actual:02X}",
+        "header_checksum_valid": actual == expected,
+        "version": rom[0xBC],
+    }
+
+
 def inspect_rom(path: Path, gbtoolsid: str | None = None) -> dict[str, Any]:
     rom = path.read_bytes()
+    if path.suffix.lower() == ".gba" or (len(rom) > 0xB2 and rom[0xB2] == 0x96):
+        return inspect_gba_bytes(path, rom)
     if len(rom) < 0x150:
         raise ValueError("file is shorter than the 0x150-byte cartridge header")
 
@@ -59,6 +84,8 @@ def inspect_rom(path: Path, gbtoolsid: str | None = None) -> dict[str, Any]:
     record: dict[str, Any] = {
         "file": str(path),
         "title": decode_title(rom),
+        "console_family": "GBC" if rom[0x143] & 0x80 else "GB",
+        "presentation_mode": "gbc-color" if rom[0x143] & 0x80 else "gb-mono",
         "sha1": hashlib.sha1(rom).hexdigest(),
         "sha256": hashlib.sha256(rom).hexdigest(),
         "file_size_bytes": len(rom),
@@ -106,7 +133,7 @@ def main() -> int:
 
     paths = find_roms(args.paths)
     if not paths:
-        parser.error("no .gb or .gbc files found")
+        parser.error("no .gb, .gbc, or .gba files found")
     records = []
     for path in paths:
         try:

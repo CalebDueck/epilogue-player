@@ -8,6 +8,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from server import MusicPlayer, Workbench, parse_info, read_gbs_header
+from gb_rom_inventory import inspect_rom
 
 
 def test_rom() -> bytes:
@@ -26,6 +27,17 @@ def test_gbs() -> bytes:
     data[:3] = b"GBS"
     data[3:6] = bytes((1, 1, 1))
     data[16:26] = b"Test Song\0"
+    return bytes(data)
+
+
+def test_gba_rom() -> bytes:
+    data = bytearray(0xC0)
+    data[0xA0:0xAC] = b"WARIO LAND 4"
+    data[0xAC:0xB0] = b"AW4E"
+    data[0xB0:0xB2] = b"01"
+    data[0xB2] = 0x96
+    data[0xBC] = 1
+    data[0xBD] = (-0x19 - sum(data[0xA0:0xBD])) & 0xFF
     return bytes(data)
 
 
@@ -78,6 +90,61 @@ class MusicPlayerTests(unittest.TestCase):
                        "tracks": ["Test Song"]}
             with self.assertRaises(ValueError):
                 MusicPlayer(catalog, cache, "gbsplay").prepare(profile)
+
+    def test_gba_header_selects_16_bit_mode(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "Wario Land 4.gba"
+            path.write_bytes(test_gba_rom())
+            info = inspect_rom(path)
+            self.assertEqual(info["title"], "WARIO LAND 4")
+            self.assertEqual(info["game_code"], "AW4E")
+            self.assertEqual(info["presentation_mode"], "gba16")
+            self.assertTrue(info["header_checksum_valid"])
+
+    def test_gbc_flag_selects_color_mode(self):
+        with tempfile.TemporaryDirectory() as temp:
+            rom = bytearray(test_rom())
+            rom[0x143] = 0x80
+            check = 0
+            for byte in rom[0x134:0x14D]:
+                check = (check - byte - 1) & 0xFF
+            rom[0x14D] = check
+            path = Path(temp) / "COLOR.gbc"
+            path.write_bytes(rom)
+            info = inspect_rom(path)
+            self.assertEqual(info["presentation_mode"], "gbc-color")
+
+    def test_gba_reader_metadata_selects_theme_but_no_music_profile(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            gba_dir = root / "gba"
+            gba_dir.mkdir()
+            (gba_dir / "Wario Land 4.gba").write_bytes(test_gba_rom())
+            catalog = root / "catalog.json"
+            catalog.write_text('{"games": []}')
+
+            class FakeGBAWorkbench(Workbench):
+                def __init__(self):
+                    self.commands = []
+                    super().__init__("throwback", root / "dumps", catalog,
+                                     root / "cache", "gbsplay", gba_dir)
+
+                def _run(self, args, timeout=90):
+                    self.commands.append(args)
+                    return subprocess.CompletedProcess(args, 0,
+                        "Type: GBA\nTitle: WARIOLANDE\nGame Code: AWAE\n"
+                        "Header Checksum: 0xE7 (valid)\nVersion: 1\n", "")
+
+            app = FakeGBAWorkbench()
+            app.scan_once()
+            state = app.snapshot()
+            self.assertEqual(state["game"]["analysis"]["presentation_mode"], "gba16")
+            self.assertEqual(state["player"]["status"], "UNAVAILABLE")
+            self.assertIn("no GBA music backend", state["player"]["message"])
+            self.assertEqual(app.commands, [["info"]])
+            preview = app.gba_preview()
+            self.assertTrue(preview["available"])
+            self.assertEqual(preview["game"]["game_code"], "AW4E")
 
 
 if __name__ == "__main__":

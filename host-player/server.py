@@ -19,6 +19,7 @@ from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
@@ -195,6 +196,14 @@ class MusicPlayer:
             self.status = "STOPPED"
             self.message = "Waiting for a supported cartridge."
 
+    def unsupported(self, message: str) -> None:
+        with self.lock:
+            self._stop_locked()
+            self.profile = None
+            self.gbs_file = None
+            self.status = "UNAVAILABLE"
+            self.message = message
+
     def step(self, amount: int) -> None:
         with self.lock:
             if self.profile is None:
@@ -220,9 +229,12 @@ class MusicPlayer:
 
 class Workbench:
     def __init__(self, throwback: str, output_dir: Path, catalog: Path,
-                 cache_dir: Path, gbsplay: str) -> None:
+                 cache_dir: Path, gbsplay: str, gba_library_dir: Path,
+                 gb_library_dir: Path | None = None) -> None:
         self.throwback = throwback
         self.output_dir = output_dir
+        self.gba_library_dir = gba_library_dir
+        self.gb_library_dir = gb_library_dir or (Path.home() / "games" / "gb")
         self.music = MusicPlayer(catalog, cache_dir, gbsplay)
         self.lock = threading.RLock()
         self.force_scan = threading.Event()
@@ -250,6 +262,49 @@ class Workbench:
         result["player"] = self.music.snapshot()
         return result
 
+    def theme_preview(self, mode: str) -> dict[str, Any]:
+        if mode == "gba16":
+            library = self.gba_library_dir
+            extensions = {".gba"}
+            preferred_names = ("Wario Land 4 (USA, Europe).gba",)
+        elif mode == "gbc-color":
+            library = self.gb_library_dir
+            extensions = {".gb", ".gbc"}
+            preferred_names = ("Pokemon - Crystal Version (USA, Europe).gb",
+                               "shantae.gbc")
+        elif mode == "gb-mono":
+            library = self.gb_library_dir
+            extensions = {".gb", ".gbc"}
+            preferred_names = ("Super Mario Land (World) (Rev A).gb",)
+        else:
+            return {"available": False, "message": "Unknown presentation mode."}
+        preferred = next((library / name for name in preferred_names
+                          if (library / name).is_file()), None)
+        candidates = (preferred,) if preferred else tuple(
+            p for p in sorted(library.iterdir())
+            if p.suffix.lower() in extensions and not p.name.startswith("._")) if library.is_dir() else ()
+        rom_path = None
+        meta = None
+        for candidate in candidates:
+            try:
+                inspected = inspect_rom(candidate)
+            except (OSError, ValueError):
+                continue
+            if inspected.get("presentation_mode") == mode:
+                rom_path, meta = candidate, inspected
+                break
+        if rom_path is None:
+            return {"available": False, "message": f"No local {mode} ROM is available for a theme preview."}
+        return {"available": True, "game": {
+            key: meta[key] for key in ("title", "game_code", "maker_code", "region_code",
+                                       "header_checksum_valid", "sha256", "file_size_bytes",
+                                       "console_family", "presentation_mode")
+            if key in meta
+        }, "file_name": rom_path.name}
+
+    def gba_preview(self) -> dict[str, Any]:
+        return self.theme_preview("gba16")
+
     def scan_once(self, force_dump: bool = False) -> None:
         try:
             result = self._run(["info"], timeout=15)
@@ -272,8 +327,27 @@ class Workbench:
         info = parse_info(result.stdout)
         cart_type = info.get("type", "").upper()
         title = info.get("title", "UNKNOWN GAME")
+        if cart_type == "GBA":
+            key = "|".join(info.get(k, "") for k in
+                           ("type", "game_code", "title", "version", "header_checksum"))
+            self.active_key = key
+            self.dumped_key = None
+            self.music.unsupported(
+                "GBA cartridge detected, but this player currently has no GBA music backend.")
+            game_code = info.get("game_code", "")
+            self._set(
+                device="CONNECTED", cartridge="DETECTED",
+                message="GB Operator identified a GBA cartridge. This app has no GBA music profile yet.",
+                game={"title": title, "operator_info": info, "analysis": {
+                    "console_family": "GBA", "presentation_mode": "gba16",
+                    "game_code": game_code,
+                    "header_checksum_valid": "valid" in info.get("header_checksum", "").lower(),
+                }, "supported": False},
+            )
+            return
         if cart_type not in ("GB", "GBC"):
-            self.music.unload()
+            self.active_key = self.dumped_key = None
+            self.music.unsupported("This cartridge type has no playback backend in this app.")
             self._set(device="CONNECTED", cartridge="UNSUPPORTED TYPE",
                       message=f"Detected {cart_type or 'unknown'} cartridge.",
                       game={"title": title, "operator_info": info, "analysis": None})
@@ -313,7 +387,7 @@ class Workbench:
             self.music.load_profile(profile)
             player_text = self.music.snapshot()["message"]
         else:
-            self.music.stop()
+            self.music.unsupported("No verified music profile is installed for this ROM.")
             player_text = "This ROM has no installed playback profile yet."
         self._refresh_dumps()
         self._set(cartridge="DUMPED", message="ROM read and validated locally.",
@@ -326,7 +400,7 @@ class Workbench:
         if self.output_dir.exists():
             for path in sorted(self.output_dir.glob("*"), key=lambda p: p.stat().st_mtime,
                                reverse=True):
-                if path.suffix.lower() not in (".gb", ".gbc") or path.name.startswith("._"):
+                if path.suffix.lower() not in (".gb", ".gbc", ".gba") or path.name.startswith("._"):
                     continue
                 try:
                     stat = path.stat()
@@ -359,9 +433,17 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(raw)
 
     def do_GET(self) -> None:
-        if self.path == "/api/status":
+        route = urlsplit(self.path).path
+        if route == "/api/status":
             self._json(200, self.workbench.snapshot())
-        elif self.path in ("/", "/index.html"):
+        elif route == "/api/gba-preview":
+            self._json(200, self.workbench.gba_preview())
+        elif route == "/api/theme-preview":
+            mode = urlsplit(self.path).query
+            query = dict(item.split("=", 1) if "=" in item else (item, "")
+                         for item in mode.split("&") if item)
+            self._json(200, self.workbench.theme_preview(query.get("mode", "")))
+        elif route in ("/", "/index.html"):
             raw = (self.web_root / "index.html").read_bytes()
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
@@ -406,11 +488,18 @@ def main() -> None:
                         default=Path.home() / "games" / "gb" / "operator-dumps")
     parser.add_argument("--cache-dir", type=Path,
                         default=Path.home() / ".local" / "share" / "epilogue-player" / "gbs")
+    parser.add_argument("--gba-library-dir", type=Path,
+                        default=Path.home() / "games" / "gba",
+                        help="local GBA ROM folder used only for the labeled theme preview")
+    parser.add_argument("--gb-library-dir", type=Path,
+                        default=Path.home() / "games" / "gb",
+                        help="local GB/GBC ROM folder used only for labeled theme previews")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8766)
     args = parser.parse_args()
 
-    app = Workbench(args.throwback, args.output_dir, args.catalog, args.cache_dir, args.gbsplay)
+    app = Workbench(args.throwback, args.output_dir, args.catalog, args.cache_dir,
+                    args.gbsplay, args.gba_library_dir, args.gb_library_dir)
     threading.Thread(target=app.run, name="operator-poller", daemon=True).start()
     handler = type("PlayerHandler", (Handler,), {"workbench": app,
                                                   "web_root": Path(__file__).parent / "web"})

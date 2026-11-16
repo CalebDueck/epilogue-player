@@ -47,6 +47,29 @@ Track labels are from the [Operation C index](https://downloads.khinsider.com/ga
 and [Jurassic Park 2 index](https://downloads.khinsider.com/game-soundtracks/album/jurassic-park-2-the-chaos-continues-gb).
 The full ROM dump remains on the host and is never uploaded by this app.
 
+## Presentation modes and GBA scope
+
+The synthwave interface selects its accent palette from cartridge metadata:
+the GB CGB compatibility flag produces a monochrome GB or color GBC theme, and
+Throwback's GBA type/header metadata selects a 16-bit GBA theme. The GB Operator
+supports GB, GBC, and GBA cartridges according to [Epilogue's official FAQ](https://www.epilogue.co/support/hardware/gb-operator-faq).
+This app reads GBA identification metadata through Throwback but does not yet
+dump GBA ROMs or play GBA music; it displays GBA playback as unavailable.
+The live cartridge during this UI pass was Jurassic Park II (GB), so physical
+GBA insertion was not tested; the GBA preview uses only the local ROM header.
+
+The labeled theme previews read header metadata from local ROMs in
+`~/games/gb` and `~/games/gba`; they do not switch cartridges, dump files, or
+play those ROMs. For example, `http://127.0.0.1:8766/?ui-preview=gba` previews
+the 16-bit look using the local Wario Land 4 header. The screenshots below are
+UI previews captured from the running app.
+
+![GB monochrome synthwave theme](docs/screenshots/gb-monochrome.png)
+
+![GBC color synthwave theme](docs/screenshots/gbc-color.png)
+
+![GBA 16-bit synthwave preview](docs/screenshots/gba-16bit.png)
+
 Other cartridges are identified and dumped, but the app reports them as
 unsupported until a matching profile exists. A profile maps exact ROM hashes
 to a GBS file, its checksum, track labels, and source in
