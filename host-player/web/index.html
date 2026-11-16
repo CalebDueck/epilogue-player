@@ -21,6 +21,9 @@
     body[data-mode="gb-mono"] { --accent:#a4ffca; --accent2:#62f5e8; --line:rgba(164,255,202,.34); }
     body[data-mode="gbc-color"] { --accent:#5deaff; --accent2:#ff5be7; --line:rgba(93,234,255,.38); }
     body[data-mode="gba16"] { --accent:#ffd166; --accent2:#ff5f9f; --line:rgba(255,209,102,.4); }
+    body[data-mode="gb-mono"] { background-color:#101914; background-image:linear-gradient(180deg,#18251e 0,#101914 48%,#0a100d 100%), repeating-linear-gradient(0deg,transparent 0 31px,rgba(184,224,190,.035) 32px 33px); }
+    body[data-mode="gbc-color"] { background-color:#101026; background-image:radial-gradient(ellipse at 50% -15%,#183f74 0,#201034 42%,#0b0819 76%),repeating-conic-gradient(from 0deg at 50% 50%,rgba(93,234,255,.045) 0 25%,transparent 0 50%); background-size:auto,64px 64px; }
+    body[data-mode="gba16"] { background-color:#171026; background-image:radial-gradient(ellipse at 50% -15%,#6a285e 0,#241638 38%,#0b0819 76%),linear-gradient(135deg,transparent 0 42%,rgba(255,209,102,.055) 42% 43%,transparent 43% 58%,rgba(255,95,159,.05) 58% 59%,transparent 59%); }
     body::before {
       content:""; position:fixed; z-index:-1; inset:auto -12% -20vh; height:51vh; pointer-events:none;
       transform:perspective(250px) rotateX(48deg); transform-origin:top center;
@@ -35,6 +38,12 @@
       mask-image:linear-gradient(to bottom,#000 0 68%,transparent 69%);
       filter:drop-shadow(0 0 28px #ff4fd8);
     }
+    body[data-mode="gb-mono"]::before { background:repeating-linear-gradient(0deg,transparent 0 22px,rgba(164,255,202,.13) 23px 24px),repeating-linear-gradient(90deg,transparent 0 22px,rgba(164,255,202,.1) 23px 24px); }
+    body[data-mode="gb-mono"]::after { width:260px;height:260px;left:calc(50% - 130px);border-radius:0;opacity:.14;background:repeating-linear-gradient(0deg,#a4ffca 0 14px,transparent 14px 28px);filter:none; }
+    body[data-mode="gbc-color"]::before { background:repeating-linear-gradient(0deg,transparent 0 20px,rgba(93,234,255,.24) 21px 23px),repeating-linear-gradient(90deg,transparent 0 40px,rgba(255,91,231,.2) 41px 43px); }
+    body[data-mode="gbc-color"]::after { background:repeating-conic-gradient(#5deaff 0 25%,#ff5be7 0 50%);background-size:32px 32px;mask-image:linear-gradient(to bottom,#000 0 68%,transparent 69%);filter:drop-shadow(0 0 24px #5deaff); }
+    body[data-mode="gba16"]::before { background:repeating-linear-gradient(0deg,transparent 0 16px,rgba(255,209,102,.23) 17px 19px),repeating-linear-gradient(90deg,transparent 0 32px,rgba(255,95,159,.21) 33px 35px); }
+    body[data-mode="gba16"]::after { width:360px;height:280px;left:calc(50% - 180px);border-radius:0;background:repeating-linear-gradient(135deg,#ffd166 0 18px,#ff5f9f 18px 36px,#744eff 36px 54px,transparent 54px 72px);filter:drop-shadow(0 0 30px #ff5f9f); }
     main { width:min(1000px,100%); margin:0 auto; padding:30px 20px 50px }
     .hero { display:flex; align-items:center; justify-content:space-between; gap:18px; margin:6px 0 24px }
     .eyebrow { color:var(--accent2); font-size:11px; font-weight:800; letter-spacing:.2em; text-transform:uppercase; text-shadow:0 0 12px var(--accent2) }
@@ -56,8 +65,16 @@
     button:hover:not(:disabled) { transform:translateY(-1px); border-color:var(--accent2); box-shadow:0 0 14px rgba(83,235,255,.2) }
     button:disabled { opacity:.38; cursor:default }
     #scan { margin-top:4px; color:var(--accent2) }
-    .controls { display:flex; gap:8px; flex-wrap:wrap }
-    #play { border-color:var(--accent); color:#fff; background:linear-gradient(110deg,#d92fae,#6630b4); box-shadow:0 0 16px rgba(255,79,216,.22) }
+    .controls { display:flex; justify-content:center; gap:12px; margin:16px 0 8px }
+    .transport { display:grid; place-items:center; width:54px; height:48px; padding:8px; border:2px solid var(--accent2); border-radius:0; color:var(--accent2); background:#111025; box-shadow:3px 3px 0 #070611,0 0 12px color-mix(in srgb,var(--accent2) 18%,transparent) }
+    .transport:hover:not(:disabled) { transform:translateY(-2px); box-shadow:3px 5px 0 #070611,0 0 16px color-mix(in srgb,var(--accent2) 32%,transparent) }
+    .transport svg { width:24px; height:24px; image-rendering:pixelated; shape-rendering:crispEdges }
+    .mode-toggle { min-width:80px; height:42px; padding:7px 12px; border:2px solid var(--line); border-radius:0; color:var(--muted); background:#111025; box-shadow:2px 2px 0 #070611; font:700 10px/1.2 ui-monospace,monospace; letter-spacing:.1em }
+    .mode-toggle[aria-pressed="true"] { border-color:var(--accent); color:var(--accent); box-shadow:2px 2px 0 #070611,0 0 12px color-mix(in srgb,var(--accent) 30%,transparent) }
+    .transport .pause-icon { display:none }
+    .transport.is-playing .play-icon { display:none }
+    .transport.is-playing .pause-icon { display:block }
+    #play { border-color:var(--accent); color:var(--accent); box-shadow:3px 3px 0 #070611,0 0 14px color-mix(in srgb,var(--accent) 22%,transparent) }
     #tracks { max-height:410px; overflow:auto; margin-top:14px; padding-right:3px }
     .track { width:100%; display:flex; justify-content:space-between; text-align:left; margin:4px 0; padding:9px 12px; border-color:rgba(173,144,209,.25); background:rgba(15,12,33,.72) }
     .track.active { border-color:var(--accent); color:var(--accent); box-shadow:inset 3px 0 var(--accent),0 0 12px rgba(255,79,216,.14) }
@@ -77,23 +94,53 @@
   <p class="subtitle">INSERT A CARTRIDGE · IDENTIFY ITS HARDWARE · PLAY A MATCHED SOUND MODULE</p>
   <div id="preview" class="preview"></div>
   <div class="grid">
-    <section><h2>Reader Link</h2><div id="device" class="state waiting">CHECKING</div><p id="message" class="muted">Searching for the reader…</p><button id="scan">RESCAN CARTRIDGE</button></section>
-    <section><h2>Inserted Cartridge</h2><div id="cart" class="state waiting">WAITING</div><p id="title" class="muted">Insert a GB/GBC cartridge.</p><p class="note" id="mapper">—</p><p class="note">ROM SHA-256: <code id="sha">—</code></p></section>
+    <section><h2>Reader Link</h2><div id="device" class="state waiting">CHECKING</div><p id="message" class="muted">Searching for the reader…</p><button id="scan">RECHECK CARTRIDGE</button></section>
+  <section><h2>Inserted Cartridge</h2><div id="cart" class="state waiting">WAITING</div><p id="title" class="muted">Insert a GB/GBC cartridge.</p><p class="note" id="connection-note"></p><p class="note" id="mapper">—</p><p class="note">ROM SHA-256: <code id="sha">—</code></p></section>
   </div>
   <section>
     <h2>Now Playing</h2>
     <div class="grid"><div><div id="player-status" class="state waiting">WAITING</div><p id="player-message" class="muted">Waiting for a cartridge.</p></div><div><div id="current" class="state">—</div><p id="track-number" class="muted">No track loaded</p></div></div>
-    <div class="controls"><button id="previous">◀ PREVIOUS</button><button id="play">PLAY</button><button id="next">NEXT ▶</button><button id="stop">STOP</button></div>
+    <div class="controls" aria-label="Playback controls">
+      <button id="previous" class="transport" title="Previous track" aria-label="Previous track">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M2 2h2v12H2zM13 2v12L5 8z"/></svg>
+      </button>
+      <button id="play" class="transport" title="Play" aria-label="Play">
+        <svg class="play-icon" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M3 1h3v2h2v2h2v2h2v2h-2v2H8v2H6v2H3z"/></svg>
+        <svg class="pause-icon" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M2 2h4v12H2zM10 2h4v12h-4z"/></svg>
+      </button>
+      <button id="next" class="transport" title="Next track" aria-label="Next track">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M12 2h2v12h-2zM3 2v12l8-6z"/></svg>
+      </button>
+    </div>
+    <div class="controls" aria-label="Playlist modes">
+      <button id="shuffle" class="mode-toggle" aria-label="Shuffle" aria-pressed="false">SHUFFLE</button>
+      <button id="repeat" class="mode-toggle" aria-label="Repeat playlist" aria-pressed="false">REPEAT</button>
+    </div>
+    <p class="note" style="text-align:center">Keys: Space / media play-pause · ← / media previous · → / media next</p>
     <div id="tracks"></div>
-    <p class="note">Audio plays on the laptop through a verified Game Boy sound module. No matched profile means playback stays disabled.</p>
+    <p class="note">Audio plays on this computer through a matched GBS or GSF music profile. Games without a compatible rip keep playback disabled.</p>
   </section>
-  <p class="footer">The GB Operator supports GB, GBC, and GBA hardware. This app currently plays GB/GBC sound profiles; a detected GBA cartridge gets a 16-bit theme and an explicit unsupported-audio status.</p>
+  <p class="footer">The GB Operator supports GB, GBC, and GBA hardware. The interface uses monochrome GB, color GBC, or 16-bit GBA palettes from the cartridge header.</p>
 </main>
 <script>
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 const previewMode = params.get('ui-preview');
-async function action(name) { await fetch(`/api/${name}`, {method:'POST'}); await refresh(); }
+const apiBase = (params.get('api') || (location.hostname.endsWith('.github.io') ? 'http://127.0.0.1:8766' : '')).replace(/\/$/, '');
+const remoteHosted = location.hostname.endsWith('.github.io') || params.has('api');
+const apiFetch = (path, options) => fetch(`${apiBase}${path}`, options);
+if (remoteHosted) $('connection-note').textContent = 'Click SCAN to connect. The local player and GB Operator must be running on this computer; your browser may ask permission to connect to localhost.';
+async function action(name) {
+  try {
+    const response = await apiFetch(`/api/${name}`, {method:'POST'});
+    if (!response.ok) throw new Error(`Local player returned HTTP ${response.status}`);
+    return await refresh();
+  } catch (error) {
+    $('device').textContent = 'LOCAL APP ERROR'; $('device').className = 'state bad';
+    $('message').textContent = `Could not reach the local player at ${apiBase || location.origin}. Start it with ./run-player.sh, then click SCAN. ${error}`;
+    return false;
+  }
+}
 function statusClass(value) {
   if (["CONNECTED", "DETECTED", "DUMPED", "READY", "PLAYING"].includes(value)) return "state good";
   if (["ERROR", "NOT FOUND", "UNAVAILABLE"].includes(value)) return "state bad";
@@ -116,7 +163,7 @@ async function loadPreview() {
   if (!previewMode) return;
   try {
     const mode = {'gb':'gb-mono','gbc':'gbc-color','gba':'gba16'}[previewMode];
-    const response = await fetch(`/api/theme-preview?mode=${mode}`, {cache:'no-store'}), result = await response.json();
+    const response = await apiFetch(`/api/theme-preview?mode=${mode}`, {cache:'no-store'}), result = await response.json();
     $('preview').classList.add('visible');
     if (result.available) {
       const id = result.game.game_code || result.game.cgb_flag || result.game.presentation_mode;
@@ -130,7 +177,8 @@ async function loadPreview() {
 }
 async function refresh() {
   try {
-    const response = await fetch('/api/status', {cache:'no-store'}), state = await response.json();
+    const response = await apiFetch('/api/status', {cache:'no-store'}), state = await response.json();
+    if (!response.ok) throw new Error(`Local player returned HTTP ${response.status}`);
     $('device').textContent = state.device; $('device').className = statusClass(state.device);
     $('cart').textContent = state.cartridge; $('cart').className = statusClass(state.cartridge);
     $('message').textContent = state.message;
@@ -144,27 +192,67 @@ async function refresh() {
     $('player-message').textContent = p.message;
     $('current').textContent = p.current_track || '—';
     $('track-number').textContent = p.track_count ? `TRACK ${p.track_index + 1} OF ${p.track_count}` : 'No track loaded';
-    $('play').textContent = p.status === 'PLAYING' ? 'PAUSE' : p.status === 'PAUSED' ? 'RESUME' : 'PLAY';
-    for (const id of ['play','stop','previous','next']) $(id).disabled = !p.supported;
+    const playing = p.status === 'PLAYING';
+    $('play').setAttribute('aria-label', playing ? 'Pause' : p.status === 'PAUSED' ? 'Resume' : 'Play');
+    $('play').title = playing ? 'Pause' : p.status === 'PAUSED' ? 'Resume' : 'Play';
+    $('play').classList.toggle('is-playing', playing);
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.playbackState = playing ? 'playing' : p.status === 'PAUSED' ? 'paused' : 'none';
+      if ('MediaMetadata' in window && p.game) {
+        navigator.mediaSession.metadata = new MediaMetadata({title:p.current_track || 'Game music', artist:p.game, album:'Epilogue Cartridge Sound System'});
+      }
+    }
+    for (const id of ['play','previous','next']) $(id).disabled = !p.playable;
     const trackRoot = $('tracks');
-    if (trackRoot.dataset.count !== String(p.track_count)) {
+    const trackKey = `${p.game || ''}:${game?.analysis?.sha256 || ''}:${p.track_count}`;
+    if (trackRoot.dataset.profile !== trackKey) {
       trackRoot.replaceChildren(...p.tracks.map((name, index) => {
         const button = document.createElement('button');
         button.className = 'track'; button.textContent = `${String(index + 1).padStart(2,'0')}  ${name}`;
-        button.onclick = () => fetch(`/api/track/${index}`, {method:'POST'});
+        button.onclick = () => apiFetch(`/api/track/${index}`, {method:'POST'});
         return button;
       }));
-      trackRoot.dataset.count = String(p.track_count);
+      trackRoot.dataset.profile = trackKey;
     }
     [...trackRoot.children].forEach((button, i) => button.classList.toggle('active', i === p.track_index));
+    for (const mode of ['shuffle','repeat']) {
+      const enabled = Boolean(p[mode]);
+      $(mode).setAttribute('aria-pressed', String(enabled));
+      $(mode).disabled = !p.playable;
+    }
+    return true;
   } catch (err) {
-    $('device').textContent = 'LOCAL APP ERROR'; $('device').className = 'state bad'; $('message').textContent = String(err);
+    $('device').textContent = 'LOCAL APP ERROR'; $('device').className = 'state bad';
+    $('message').textContent = apiBase ? `Could not reach the local player at ${apiBase}. Start it with ./run-player.sh, then click SCAN to retry. ${err}` : String(err);
+    return false;
   }
 }
-$('scan').onclick = () => action('scan'); $('play').onclick = () => action('play');
-$('stop').onclick = () => action('stop'); $('next').onclick = () => action('next');
+$('scan').onclick = async () => {
+  const connected = await action('scan');
+  if (connected && remoteHosted && !window.playerPoll) window.playerPoll = setInterval(refresh, 1000);
+  if (connected && previewMode) loadPreview();
+};
+$('play').onclick = () => action('play');
+$('next').onclick = () => action('next');
 $('previous').onclick = () => action('previous');
-loadPreview(); refresh(); setInterval(refresh, 1000);
+$('shuffle').onclick = () => action('shuffle'); $('repeat').onclick = () => action('repeat');
+document.addEventListener('keydown', event => {
+  const target = event.target;
+  if (target && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT|A)$/.test(target.tagName))) return;
+  if (event.code === 'Space') {
+    if (target?.closest('button')) return;
+    event.preventDefault(); action('play');
+  }
+  else if (event.key === 'ArrowLeft' && !target?.closest('.track')) { event.preventDefault(); action('previous'); }
+  else if (event.key === 'ArrowRight' && !target?.closest('.track')) { event.preventDefault(); action('next'); }
+});
+if ('mediaSession' in navigator) {
+  for (const [mediaAction, endpoint] of [['play','resume'],['pause','pause'],['previoustrack','previous'],['nexttrack','next']]) {
+    try { navigator.mediaSession.setActionHandler(mediaAction, () => action(endpoint)); }
+    catch (_) { /* The browser or operating system may not expose every media key. */ }
+  }
+}
+if (!remoteHosted) { loadPreview(); refresh(); setInterval(refresh, 1000); }
 </script>
 </body>
 </html>

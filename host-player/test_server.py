@@ -22,10 +22,10 @@ def test_rom() -> bytes:
     return bytes(rom)
 
 
-def test_gbs() -> bytes:
+def test_gbs(track_count: int = 1) -> bytes:
     data = bytearray(112 + 16)
     data[:3] = b"GBS"
-    data[3:6] = bytes((1, 1, 1))
+    data[3:6] = bytes((1, track_count, 1))
     data[16:26] = b"Test Song\0"
     return bytes(data)
 
@@ -114,7 +114,7 @@ class MusicPlayerTests(unittest.TestCase):
             info = inspect_rom(path)
             self.assertEqual(info["presentation_mode"], "gbc-color")
 
-    def test_gba_reader_metadata_selects_theme_but_no_music_profile(self):
+    def test_gba_reader_dumps_once_and_reports_missing_profile(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             gba_dir = root / "gba"
@@ -131,6 +131,9 @@ class MusicPlayerTests(unittest.TestCase):
 
                 def _run(self, args, timeout=90):
                     self.commands.append(args)
+                    if args and args[0] == "dump-rom":
+                        Path(args[1]).write_bytes(test_gba_rom())
+                        return subprocess.CompletedProcess(args, 0, "", "")
                     return subprocess.CompletedProcess(args, 0,
                         "Type: GBA\nTitle: WARIOLANDE\nGame Code: AWAE\n"
                         "Header Checksum: 0xE7 (valid)\nVersion: 1\n", "")
@@ -140,11 +143,40 @@ class MusicPlayerTests(unittest.TestCase):
             state = app.snapshot()
             self.assertEqual(state["game"]["analysis"]["presentation_mode"], "gba16")
             self.assertEqual(state["player"]["status"], "UNAVAILABLE")
-            self.assertIn("no GBA music backend", state["player"]["message"])
-            self.assertEqual(app.commands, [["info"]])
+            self.assertIn("No compatible GSF music profile", state["player"]["message"])
+            self.assertEqual(app.commands[0], ["info"])
+            self.assertEqual(app.commands[1][0], "dump-rom")
+            self.assertTrue(state["game"]["analysis"]["sha256"])
             preview = app.gba_preview()
             self.assertTrue(preview["available"])
             self.assertEqual(preview["game"]["game_code"], "AW4E")
+
+    def test_donkey_kong_land_profile_is_exact_and_has_20_subsongs(self):
+        root = Path(__file__).resolve().parent.parent
+        catalog = root / "profiles" / "catalog.json"
+        with tempfile.TemporaryDirectory() as temp:
+            player = MusicPlayer(catalog, Path(temp), "gbsplay")
+            profile = player.match(
+                "eaf831ddd75e7cbc9990e478a139ac162034c03377670fdb79615a9aa2cc570d")
+            self.assertIsNotNone(profile)
+            self.assertEqual(profile["title"], "Donkey Kong Land")
+            self.assertEqual(profile["verification"], "candidate")
+            self.assertEqual(profile["gbs_sha256"],
+                             "fa0b927cff13667f8719fc87b698fb669452a7a8698ab0f50a465d568c2fe9ad")
+            self.assertEqual(len(profile["tracks"]), 20)
+            self.assertEqual(profile["tracks"][0], "Track 01")
+            self.assertEqual(profile["tracks"][-1], "Track 20")
+            profile = dict(profile)
+            fixture = test_gbs(track_count=20)
+            profile["gbs_sha256"] = hashlib.sha256(fixture).hexdigest()
+            (Path(temp) / profile["gbs_file"]).write_bytes(fixture)
+            player.load_profile(profile)
+            state = player.snapshot()
+            self.assertEqual(state["status"], "CANDIDATE")
+            self.assertFalse(state["supported"])
+            self.assertTrue(state["playable"])
+            self.assertEqual(state["track_count"], 20)
+            self.assertIn("source ROM revision is unverified", state["message"])
 
 
 if __name__ == "__main__":

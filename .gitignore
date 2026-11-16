@@ -2,3 +2,12 @@ __pycache__/
 *.py[cod]
 .venv/
 *.log
+# Keep local ROM dumps and extracted soundtrack files out of the source repo.
+*.gb
+*.gbc
+*.gba
+*.gbs
+*.gsf
+*.gsflib
+*.minigsf
+*.wav

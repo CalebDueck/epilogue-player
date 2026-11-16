@@ -96,6 +96,7 @@ def inspect_rom(path: Path, gbtoolsid: str | None = None) -> dict[str, Any]:
         "rom_size_bytes_from_header": ROM_SIZE_BYTES.get(size_code),
         "ram_size_code": f"0x{ram_code:02X}",
         "ram_size_bytes_from_header": RAM_SIZE_BYTES.get(ram_code),
+        "version": rom[0x14C],
         "header_checksum_expected": f"0x{expected_header:02X}",
         "header_checksum_actual": f"0x{header_checksum(rom):02X}",
         "header_checksum_valid": header_checksum(rom) == expected_header,
