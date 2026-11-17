@@ -95,7 +95,7 @@
   <div id="preview" class="preview"></div>
   <div class="grid">
     <section><h2>Reader Link</h2><div id="device" class="state waiting">CHECKING</div><p id="message" class="muted">Searching for the reader…</p><button id="scan">RECHECK CARTRIDGE</button></section>
-  <section><h2>Inserted Cartridge</h2><div id="cart" class="state waiting">WAITING</div><p id="title" class="muted">Insert a GB/GBC cartridge.</p><p class="note" id="connection-note"></p><p class="note" id="mapper">—</p><p class="note">ROM SHA-256: <code id="sha">—</code></p></section>
+  <section><h2>Inserted Cartridge</h2><div id="cart" class="state waiting">WAITING</div><p id="title" class="muted">Insert a GB/GBC cartridge.</p><p class="note" id="mapper">—</p><p class="note">ROM SHA-256: <code id="sha">—</code></p></section>
   </div>
   <section>
     <h2>Now Playing</h2>
@@ -126,10 +126,7 @@
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 const previewMode = params.get('ui-preview');
-const apiBase = (params.get('api') || (location.hostname.endsWith('.github.io') ? 'http://127.0.0.1:8766' : '')).replace(/\/$/, '');
-const remoteHosted = location.hostname.endsWith('.github.io') || params.has('api');
-const apiFetch = (path, options) => fetch(`${apiBase}${path}`, options);
-if (remoteHosted) $('connection-note').textContent = 'Click SCAN to connect. The local player and GB Operator must be running on this computer; your browser may ask permission to connect to localhost.';
+const apiFetch = (path, options) => fetch(path, options);
 async function action(name) {
   try {
     const response = await apiFetch(`/api/${name}`, {method:'POST'});
@@ -137,7 +134,7 @@ async function action(name) {
     return await refresh();
   } catch (error) {
     $('device').textContent = 'LOCAL APP ERROR'; $('device').className = 'state bad';
-    $('message').textContent = `Could not reach the local player at ${apiBase || location.origin}. Start it with ./run-player.sh, then click SCAN. ${error}`;
+    $('message').textContent = `Could not reach the local player. Start it with ./run-player.sh, then click SCAN. ${error}`;
     return false;
   }
 }
@@ -223,13 +220,12 @@ async function refresh() {
     return true;
   } catch (err) {
     $('device').textContent = 'LOCAL APP ERROR'; $('device').className = 'state bad';
-    $('message').textContent = apiBase ? `Could not reach the local player at ${apiBase}. Start it with ./run-player.sh, then click SCAN to retry. ${err}` : String(err);
+    $('message').textContent = `Could not reach the local player. Start it with ./run-player.sh, then click SCAN to retry. ${err}`;
     return false;
   }
 }
 $('scan').onclick = async () => {
   const connected = await action('scan');
-  if (connected && remoteHosted && !window.playerPoll) window.playerPoll = setInterval(refresh, 1000);
   if (connected && previewMode) loadPreview();
 };
 $('play').onclick = () => action('play');
@@ -252,7 +248,7 @@ if ('mediaSession' in navigator) {
     catch (_) { /* The browser or operating system may not expose every media key. */ }
   }
 }
-if (!remoteHosted) { loadPreview(); refresh(); setInterval(refresh, 1000); }
+loadPreview(); refresh(); setInterval(refresh, 1000);
 </script>
 </body>
 </html>

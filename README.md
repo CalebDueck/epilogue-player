@@ -28,16 +28,6 @@ python3 host-player/server.py
 Python uses only its standard library. Throwback and gbsplay must be on `PATH`
 or passed with `--throwback` and `--gbsplay`.
 
-## Hosted browser interface
-
-The GitHub Pages workflow publishes `host-player/web` at
-`https://calebdueck.github.io/epilogue-player/`. Open it in a browser, start
-`./run-player.sh` on that same computer, and click **SCAN** to connect. The
-browser may ask permission to connect to localhost. The hosted page provides
-the browser UI; cartridge access, ROM matching, and audio playback remain on
-the computer running the local app. A different API URL can be selected with
-the `?api=` query parameter.
-
 ## Music profiles and playback
 
 The player matches full ROM SHA-256 values to a local track profile. The

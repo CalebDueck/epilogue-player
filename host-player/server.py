@@ -667,35 +667,14 @@ class Workbench:
 class Handler(BaseHTTPRequestHandler):
     workbench: Workbench
     web_root: Path
-    cors_origins: set[str]
-
-    def _cors(self) -> None:
-        origin = self.headers.get("Origin")
-        if origin and origin in self.cors_origins:
-            self.send_header("Access-Control-Allow-Origin", origin)
-            self.send_header("Vary", "Origin")
 
     def _json(self, status: int, payload: dict[str, Any]) -> None:
         raw = json.dumps(payload).encode()
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(raw)))
-        self._cors()
         self.end_headers()
         self.wfile.write(raw)
-
-    def do_OPTIONS(self) -> None:
-        origin = self.headers.get("Origin")
-        if origin not in self.cors_origins:
-            self.send_error(403)
-            return
-        self.send_response(204)
-        self._cors()
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
-        self.send_header("Access-Control-Max-Age", "600")
-        self.send_header("Content-Length", "0")
-        self.end_headers()
 
     def do_GET(self) -> None:
         route = urlsplit(self.path).path
@@ -769,11 +748,6 @@ def main() -> None:
                         help="local GSF/miniGSF track library")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8766)
-    parser.add_argument(
-        "--cors-origins",
-        default=os.environ.get("PLAYER_CORS_ORIGINS", "https://calebdueck.github.io"),
-        help="comma-separated browser origins allowed to control the local player",
-    )
     args = parser.parse_args()
 
     app = Workbench(args.throwback, args.output_dir, args.catalog, args.cache_dir,
@@ -781,12 +755,7 @@ def main() -> None:
                     args.gsf_library_dir, args.gsfplay)
     threading.Thread(target=app.run, name="operator-poller", daemon=True).start()
     handler = type("PlayerHandler", (Handler,), {"workbench": app,
-                                                  "web_root": Path(__file__).parent / "web",
-                                                  "cors_origins": {
-                                                      origin.strip()
-                                                      for origin in args.cors_origins.split(",")
-                                                      if origin.strip()
-                                                  }})
+                                                  "web_root": Path(__file__).parent / "web"})
     server = ThreadingHTTPServer((args.host, args.port), handler)
     print(f"Epilogue GB Player: http://{args.host}:{args.port}")
     print(f"ROM dumps: {args.output_dir}")
